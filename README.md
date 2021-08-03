@@ -34,7 +34,7 @@ $ npm install csurf
 <!-- eslint-disable no-unused-vars -->
 
 ```js
-var csurf = require('csurf')
+const csurf = require('csurf')
 ```
 
 ### csurf([options])
@@ -122,28 +122,32 @@ The following is an example of some server-side code that generates a form
 that requires a CSRF token to post back.
 
 ```js
-var cookieParser = require('cookie-parser')
-var csrf = require('csurf')
-var bodyParser = require('body-parser')
-var express = require('express')
+const cookieParser = require('cookie-parser')
+const csrf = require('csurf')
+const bodyParser = require('body-parser')
+const express = require('express')
 
 // setup route middlewares
 var csrfProtection = csrf({ cookie: true })
 var parseForm = bodyParser.urlencoded({ extended: false })
 
 // create express app
-var app = express()
+const app = express()
 
 // parse cookies
 // we need this because "cookie" is true in csrfProtection
-app.use(cookieParser())
+app.use(
+ cookieParser(),
+ parseForm,
+ csrfProtection,
+) 
 
-app.get('/form', csrfProtection, function (req, res) {
+app.get('/form', (req, res) => {
   // pass the csrfToken to the view
   res.render('send', { csrfToken: req.csrfToken() })
 })
 
-app.post('/process', parseForm, csrfProtection, function (req, res) {
+app.post('/process', (req, res) => {
   res.send('data is being processed')
 })
 ```
@@ -237,38 +241,40 @@ The following is an example of how to order your routes so that certain endpoint
 do not check for a valid CSRF token.
 
 ```js
-var cookieParser = require('cookie-parser')
-var csrf = require('csurf')
-var bodyParser = require('body-parser')
-var express = require('express')
+const cookieParser = require('cookie-parser')
+const csrf = require('csurf')
+const bodyParser = require('body-parser')
+const express = require('express')
 
 // create express app
-var app = express()
+const app = express()
 
 // create api router
-var api = createApiRouter()
+const api = createApiRouter()
 
 // mount api before csrf is appended to the app stack
 app.use('/api', api)
 
 // now add csrf and other middlewares, after the "/api" was mounted
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(cookieParser())
-app.use(csrf({ cookie: true }))
+app.use(
+ bodyParser.urlencoded({ extended: false }),
+ cookieParser(),
+ csrf({ cookie: true })
+)
 
-app.get('/form', function (req, res) {
+app.get('/form', (req, res) => {
   // pass the csrfToken to the view
   res.render('send', { csrfToken: req.csrfToken() })
 })
 
-app.post('/process', function (req, res) {
+app.post('/process', (req, res) => {
   res.send('csrf was required to get here')
 })
 
-function createApiRouter () {
-  var router = new express.Router()
+createApiRouter = () => {
+  const router = new express.Router()
 
-  router.post('/getProfile', function (req, res) {
+  router.post('/getProfile', (req, res) => {
     res.send('no csrf to get here')
   })
 
@@ -283,15 +289,18 @@ When the CSRF token validation fails, an error is thrown that has
 error messages.
 
 ```js
-var bodyParser = require('body-parser')
-var cookieParser = require('cookie-parser')
-var csrf = require('csurf')
-var express = require('express')
+const bodyParser = require('body-parser')
+const cookieParser = require('cookie-parser')
+const csrf = require('csurf')
+const express = require('express')
 
-var app = express()
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(cookieParser())
-app.use(csrf({ cookie: true }))
+const app = express()
+
+app.use(
+ bodyParser.urlencoded({ extended: false }),
+ cookieParser(),
+ csrf({ cookie: true })
+)
 
 // error handler
 app.use(function (err, req, res, next) {
